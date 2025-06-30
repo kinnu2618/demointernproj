@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        h1 { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #dddddd; text-align: left; padding: 8px; }
+        th { background-color: #f2f2f2; }
+        .total-row { font-weight: bold; background-color: #e6f7ff; }
+    </style>
+</head>
+<body>
+    <h1>Daily Vendor Payments Report</h1>
+    <p>Date range: {{start_date}} to {{end_date}}</p>
+    
+    {% if payments %}
+        <table>
+            <tr>
+                <th>Document Number</th>
+                <th>Posting Date</th>
+                <th>Vendor</th>
+                <th>Amount</th>
+                <th>Currency</th>
+                <th>Description</th>
+            </tr>
+            {% for payment in payments %}
+            <tr>
+                <td>{{ payment.document_number }}</td>
+                <td>{{ payment.posting_date }}</td>
+                <td>{{ payment.vendor }}</td>
+                <td>{{ payment.amount }}</td>
+                <td>{{ payment.currency }}</td>
+                <td>{{ payment.text }}</td>
+            </tr>
+            {% endfor %}
+            <tr class="total-row">
+                <td colspan="3">Total Payments</td>
+                <td>{{ total_amount }}</td>
+                <td>{{ currency }}</td>
+                <td>{{ count }} payments</td>
+            </tr>
+        </table>
+    {% else %}
+        <p>No vendor payments found in the specified date range.</p>
+    {% endif %}
+    
+    <p>This is an automated report. Please contact IT if you have any questions.</p>
+</body>
+</html>
