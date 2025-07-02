@@ -26,6 +26,7 @@ EMAIL_CONFIG = {
     'subject_prefix': os.getenv('EMAIL_SUBJECT_PREFIX', 'SAP Vendor Payments Report - ')
 }
 
+
 # Report Configuration
 REPORT_CONFIG = {
     'output_dir': Path(os.getenv('OUTPUT_DIR', 'data')),
