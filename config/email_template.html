@@ -2,49 +2,33 @@
 <html>
 <head>
     <style>
-        body { font-family: Arial, sans-serif; }
-        h1 { color: #2c3e50; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #dddddd; text-align: left; padding: 8px; }
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .header { background-color: #f8f9fa; padding: 20px; text-align: center; }
+        .content { padding: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
-        .total-row { font-weight: bold; background-color: #e6f7ff; }
+        .footer { margin-top: 20px; font-size: 0.9em; color: #666; }
     </style>
 </head>
 <body>
-    <h1>Daily Vendor Payments Report</h1>
-    <p>Date range: {{start_date}} to {{end_date}}</p>
+    <div class="header">
+        <h1>SAP Vendor Payments Report</h1>
+        <p>Generated on {{report_date}}</p>
+    </div>
     
-    {% if payments %}
-        <table>
-            <tr>
-                <th>Document Number</th>
-                <th>Posting Date</th>
-                <th>Vendor</th>
-                <th>Amount</th>
-                <th>Currency</th>
-                <th>Description</th>
-            </tr>
-            {% for payment in payments %}
-            <tr>
-                <td>{{ payment.document_number }}</td>
-                <td>{{ payment.posting_date }}</td>
-                <td>{{ payment.vendor }}</td>
-                <td>{{ payment.amount }}</td>
-                <td>{{ payment.currency }}</td>
-                <td>{{ payment.text }}</td>
-            </tr>
-            {% endfor %}
-            <tr class="total-row">
-                <td colspan="3">Total Payments</td>
-                <td>{{ total_amount }}</td>
-                <td>{{ currency }}</td>
-                <td>{{ count }} payments</td>
-            </tr>
-        </table>
-    {% else %}
-        <p>No vendor payments found in the specified date range.</p>
-    {% endif %}
+    <div class="content">
+        <h2>Payment Summary</h2>
+        <p>Total Payments: {{total_payments}}</p>
+        <p>Total Amount: {{total_amount}}</p>
+        <p>Period: {{period_start}} to {{period_end}}</p>
+        
+        <h2>Payment Details</h2>
+        {{payment_table}}
+    </div>
     
-    <p>This is an automated report. Please contact IT if you have any questions.</p>
+    <div class="footer">
+        <p>This is an automated email. Please do not reply directly to this message.</p>
+    </div>
 </body>
 </html>

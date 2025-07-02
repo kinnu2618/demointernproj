@@ -1,28 +1,38 @@
 import os
-from datetime import datetime, timedelta
+from pathlib import Path
+from dotenv import load_dotenv
 
-class Config:
-    # SAP Connection Parameters
-    SAP_ASHOST = os.getenv('SAP_ASHOST', 'sap.server.com')  # SAP application server
-    SAP_SYSNR = os.getenv('SAP_SYSNR', '00')                # SAP system number
-    SAP_CLIENT = os.getenv('SAP_CLIENT', '100')             # SAP client
-    SAP_USER = os.getenv('SAP_USER', 'RFC_USER')            # RFC user
-    SAP_PASSWD = os.getenv('SAP_PASSWD', 'password')        # RFC password
-    
-    # Email Configuration
-    EMAIL_SMTP_SERVER = os.getenv('EMAIL_SMTP_SERVER', 'smtp.company.com')
-    EMAIL_SMTP_PORT = int(os.getenv('EMAIL_SMTP_PORT', 587))
-    EMAIL_SENDER = os.getenv('EMAIL_SENDER', 'sap-reports@company.com')
-    EMAIL_SENDER_PASSWORD = os.getenv('EMAIL_SENDER_PASSWORD', 'email_password')
-    EMAIL_RECIPIENTS = os.getenv('EMAIL_RECIPIENTS', 'finance-team@company.com').split(',')
-    
-    # Report Configuration
-    REPORT_DAYS_BACK = int(os.getenv('REPORT_DAYS_BACK', 1))  # Default: last 24 hours
-    REPORT_TIMEZONE = os.getenv('REPORT_TIMEZONE', 'UTC')
-    
-    @staticmethod
-    def get_date_range():
-        """Get date range for the report (last 24 hours by default)"""
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=Config.REPORT_DAYS_BACK)
-        return start_date.date(), end_date.date()
+# Load environment variables
+load_dotenv()
+
+# SAP Connection Configuration
+SAP_CONFIG = {
+    'user': os.getenv('SAP_USER'),
+    'passwd': os.getenv('SAP_PASSWORD'),
+    'ashost': os.getenv('SAP_HOST'),
+    'sysnr': os.getenv('SAP_SYSTEM_NUMBER', '00'),
+    'client': os.getenv('SAP_CLIENT', '100'),
+    'lang': os.getenv('SAP_LANGUAGE', 'EN')
+}
+
+# Email Configuration
+EMAIL_CONFIG = {
+    'smtp_server': os.getenv('SMTP_SERVER'),
+    'smtp_port': int(os.getenv('SMTP_PORT', '587')),
+    'smtp_user': os.getenv('SMTP_USER'),
+    'smtp_password': os.getenv('SMTP_PASSWORD'),
+    'sender_email': os.getenv('SENDER_EMAIL'),
+    'recipients': [email.strip() for email in os.getenv('RECIPIENT_EMAILS', '').split(',')],
+    'subject_prefix': os.getenv('EMAIL_SUBJECT_PREFIX', 'SAP Vendor Payments Report - ')
+}
+
+# Report Configuration
+REPORT_CONFIG = {
+    'output_dir': Path(os.getenv('OUTPUT_DIR', 'data')),
+    'days_back': int(os.getenv('DAYS_BACK', '1')),
+    'function_module': os.getenv('SAP_FUNCTION_MODULE', 'BAPI_ACC_DOCUMENT_GETLIST'),
+    'company_code': os.getenv('COMPANY_CODE', '1000')
+}
+
+# Create output directory if it doesn't exist
+REPORT_CONFIG['output_dir'].mkdir(parents=True, exist_ok=True)

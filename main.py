@@ -1,82 +1,54 @@
 import logging
 from datetime import datetime
-from config.config import Config
-from sap.rfc_client import SAPRFCClient
-from utils.email_sender import EmailSender
-from jinja2 import Template
-import csv
-import os
+from pathlib import Path
+from lib.sap_connector import SAPConnector
+from lib.email_sender import EmailSender
+from config.config import REPORT_CONFIG
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(REPORT_CONFIG['output_dir'] / 'payment_report.log'),
+        logging.StreamHandler()
+    ]
 )
+
 logger = logging.getLogger(__name__)
 
-def generate_report(payments, start_date, end_date):
-    """Generate HTML report and CSV file"""
-    # Calculate totals
-    total_amount = sum(p['amount'] for p in payments) if payments else 0
-    currency = payments[0]['currency'] if payments else ''
-    count = len(payments) if payments else 0
-    
-    # Render HTML email
-    with open('config/email_template.html', 'r') as f:
-        template = Template(f.read())
-    
-    html_content = template.render(
-        payments=payments,
-        start_date=start_date,
-        end_date=end_date,
-        total_amount=total_amount,
-        currency=currency,
-        count=count
-    )
-    
-    # Generate CSV file
-    csv_filename = f"vendor_payments_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-    if payments:
-        with open(csv_filename, 'w', newline='') as csvfile:
-            fieldnames = payments[0].keys()
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(payments)
-    
-    return html_content, csv_filename if payments else None
-
 def main():
-    logger.info("Starting SAP Vendor Payments Report")
+    logger.info("Starting SAP Vendor Payments Report process")
     
-    # Get date range from config
-    start_date, end_date = Config.get_date_range()
-    logger.info(f"Fetching vendor payments from {start_date} to {end_date}")
-    
-    # Connect to SAP and fetch data
-    sap_client = SAPRFCClient()
-    payments = sap_client.get_vendor_payments(start_date, end_date)
-    sap_client.disconnect()
-    
-    if payments is None:
-        logger.error("Failed to retrieve vendor payments from SAP")
-        return
-    
-    logger.info(f"Retrieved {len(payments)} vendor payments")
-    
-    # Generate report and email
-    html_content, csv_filename = generate_report(payments, start_date, end_date)
-    
-    subject = f"Daily Vendor Payments Report - {end_date.strftime('%Y-%m-%d')}"
-    attachments = [csv_filename] if csv_filename else None
-    
-    # Send email
-    email_sent = EmailSender.send_email(subject, html_content, attachments)
-    
-    # Clean up
-    if csv_filename and os.path.exists(csv_filename):
-        os.remove(csv_filename)
-    
-    logger.info("SAP Vendor Payments Report completed")
+    try:
+        # Step 1: Connect to SAP and fetch data
+        sap_connector = SAPConnector()
+        sap_connector.connect()
+        
+        payment_data = sap_connector.get_vendor_payments()
+        
+        if payment_data is None or payment_data.empty:
+            logger.info("No payment data to process. Exiting.")
+            return
+        
+        # Step 2: Save data to CSV
+        csv_file = sap_connector.save_to_csv(payment_data)
+        
+        # Step 3: Prepare and send email
+        email_sender = EmailSender()
+        email_content = email_sender.create_email_content(payment_data)
+        
+        email_subject = f"Vendor Payments {datetime.now().strftime('%Y-%m-%d')}"
+        email_sender.send_email(email_subject, email_content, csv_file)
+        
+        logger.info("Process completed successfully")
+        
+    except Exception as e:
+        logger.error(f"Process failed: {e}")
+        raise
+    finally:
+        if 'sap_connector' in locals():
+            sap_connector.disconnect()
 
 if __name__ == "__main__":
     main()
